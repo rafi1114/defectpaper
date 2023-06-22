@@ -1,0 +1,51 @@
+units			metal
+dimension		3
+boundary		p p p
+atom_style		atomic 
+
+
+
+lattice		fcc 3.597
+
+
+region			setup block -3 3 -3 3 -5 30
+region			bed block -3 3 -3 3 0 8
+create_box		1 setup
+create_atoms		1 region bed
+
+mass			1 63.546
+
+pair_style 		eam/alloy 
+pair_coeff		 * * Cu01.eam.alloy Cu
+neighbor 		2.0 bin 
+neigh_modify 		delay 10 check yes 
+
+
+region			bedtop block -3 3 -3 3 2 10
+
+velocity		all create 300.0 4928459 
+
+
+thermo			100
+
+minimize		0 1.0e-6 1000 10000
+
+fix			4 all nve
+timestep		0.001
+#run			5000
+unfix			4
+
+
+fix			1 all npt temp 300 300 0.1 iso 0 0 1
+timestep		0.001
+#run 			10000
+unfix			1
+
+fix			2 all nve
+timestep		0.001
+#run			5000
+unfix			2
+
+write_data		layer.data
+
+
