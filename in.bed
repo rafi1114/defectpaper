@@ -1,0 +1,150 @@
+units			metal
+dimension		3
+boundary		p p p
+atom_style		atomic 
+
+
+
+lattice		fcc 3.597
+
+
+
+
+region			setup block -3 3 -3 3 -5 300
+region			bed block -3 3 -3 3 0 8
+create_box		1 setup
+create_atoms		1 region bed
+
+mass			1 63.546
+
+pair_style 		eam/alloy 
+pair_coeff		 * * Cu01.eam.alloy Cu
+neighbor 		2.0 bin 
+neigh_modify 		delay 10 check yes 
+
+velocity		all create 300.0 4928459 
+
+minimize		0 1.0e-6 1000 10000
+
+
+
+region			bedtop block -3 3 -3 3 2 10
+group			bedtop region bedtop
+
+thermo			50
+
+dump			1 all atom 1000 dump.temp
+restart		30000 restart.*.layer2
+
+
+
+fix 			1 bedtop nve
+timestep		0.001
+run			5000
+unfix			1
+
+fix			2 bedtop npt temp 300 300 0.5 iso 1.01325 1.01325 10
+timestep 		0.001
+run			10000
+unfix			2
+
+write_data		bedinit.data
+
+
+fix			3 bedtop nve
+timestep		0.001
+run			5000
+unfix			3
+
+#fix			4 bedtop npt temp 1500 1500 0.1 iso 0 0 10
+#timestep		0.001
+#run			10000
+#unfix			4
+
+read_data		layer.data add append shift 0 0 32 group layer
+
+group			bedlayer union bedtop layer
+delete_atoms		overlap 0.00001 all all
+
+
+write_data		bedlayer.data
+
+fix			5 layer nve
+timestep		0.001
+run			5000
+unfix			5
+
+fix			6 layer nvt temp 1500 1500 0.1 
+timestep		0.01
+run			2500
+unfix			6
+
+
+fix			7 bedlayer nph iso 1.01325 1.01325 10
+timestep		0.001
+run			5000
+unfix			7
+
+fix			8 bedlayer npt temp 300 300 0.1 iso 1.01325 1.01325 10
+timestep		0.01
+run			5000
+unfix			8
+
+write_data		bedlayer1.data
+
+
+read_data		layer.data add append shift 0 0 63 group layer2
+
+group			layer12 union bedlayer layer2
+
+fix			15 layer2 nve
+timestep		0.001
+run			5000
+unfix			15
+
+fix			16 layer2 nvt temp 1500 1500 0.1 
+timestep		0.01
+run			2500
+unfix			16
+
+
+fix			17 layer12 nph iso 1.01325 1.01325 10
+timestep		0.001
+run			5000
+unfix			17
+
+fix			18 layer12 npt temp 300 300 0.1 iso 1.01325 1.01325 10
+timestep		0.01
+run			5000
+unfix			18
+
+write_data		bedlayer2.data
+
+read_data		layer.data add append shift 0 0 95 group layer3
+
+group			layer123 union layer12 layer3
+
+fix			25 layer3 nve
+timestep		0.001
+run			5000
+unfix			25
+
+fix			26 layer3 nvt temp 1500 1500 0.1 
+timestep		0.01
+run			2500
+unfix			26
+
+
+fix			27 layer123 nph iso 1.01325 1.01325 10
+timestep		0.001
+run			5000
+unfix			27
+
+fix			28 layer123 npt temp 300 300 0.1 iso 1.01325 1.01325 10
+timestep		0.01
+run			5000
+unfix			28
+
+write_data		bedlayer3.data
+
+
